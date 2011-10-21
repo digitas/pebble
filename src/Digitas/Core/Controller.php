@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Base controller
  * 
@@ -7,9 +8,10 @@
  */
 class Digitas_Core_Controller
 {
+
     protected $twig;
     protected $config;
-    
+
     /**
      * Constructor
      * 
@@ -17,7 +19,7 @@ class Digitas_Core_Controller
      */
     public function __construct()
     {}
-    
+
     /**
      * Set the Twig_Environment object
      * 
@@ -27,7 +29,7 @@ class Digitas_Core_Controller
     {
         $this->twig = $twig;
     }
-    
+
     /**
      * Set the global config
      * 
@@ -37,7 +39,7 @@ class Digitas_Core_Controller
     {
         $this->config = $config;
     }
-    
+
     /**
      * Redirect to $route
      * 
@@ -46,30 +48,30 @@ class Digitas_Core_Controller
      */
     public function redirect($route, $status = 302)
     {
-        switch($status) {
+        switch ($status) {
             case 301:
                 header('Status: 301 Moved Permanently', false, 301);
                 break;
-            
+
             case 302:
                 header('Status: 302 Found', false, 302);
                 break;
-            
+
             default:
                 header('Status: ' . $status, false, $status);
         }
-        
-        header('Location: ' . $route);
+
+        header('Location: ' . $this->config['app']['basedir'] . $route);
     }
-    
+
     public function download($contentType, $filename, $content)
     {
         header('Content-type: ' . $contentType);
         header('Content-disposition: attachment; filename="' . $filename . '"');
-        
+
         return $content;
     }
-    
+
     /**
      * Create a new token and return it
      * 
@@ -79,10 +81,10 @@ class Digitas_Core_Controller
     {
         $token = md5(uniqid(mt_rand(), true));
         $_SESSION['token'] = $token;
-        
+
         return $token;
     }
-    
+
     /**
      * Check the token
      * 
@@ -92,11 +94,11 @@ class Digitas_Core_Controller
     {
         return (isset($_SESSION['token'])
                 && (
-                    (isset($_GET['token']) && $_SESSION['token'] === $_GET['token'])
-                    || (isset($_POST['token']) && $_SESSION['token'] === $_POST['token'])
+                (isset($_GET['token']) && $_SESSION['token'] === $_GET['token'])
+                || (isset($_POST['token']) && $_SESSION['token'] === $_POST['token'])
                 ));
     }
-    
+
     /**
      * Display the error page
      * 
@@ -108,17 +110,17 @@ class Digitas_Core_Controller
         if ($e->getCode() == 404) {
             header('Status: 404 Not Found', false, 404);
             return $this->render('error.html.twig', array(
-                'title'         => 'Page not found',
-                'message'       => $this->config['app']['debug'] ? $e->getMessage() : 'You may have clicked an expired link or mistyped the address. Some web addresses are case sensitive.'
-            ));
+                        'title' => 'Page not found',
+                        'message' => $this->config['app']['debug'] ? $e->getMessage() : 'You may have clicked an expired link or mistyped the address. Some web addresses are case sensitive.'
+                    ));
         }
-        
+
         return $this->render('error.html.twig', array(
-            'title'         => 'Oups, an error happened',
-            'message'       => $this->config['app']['debug'] ? $e->getMessage() . ' (' . $e->getFile() . ':' . $e->getLine() . ')' : "We're sorry, something went wrong."
-        ));
+                    'title' => 'Oups, an error happened',
+                    'message' => $this->config['app']['debug'] ? $e->getMessage() . ' (' . $e->getFile() . ':' . $e->getLine() . ')' : "We're sorry, something went wrong."
+                ));
     }
-    
+
     /**
      * Render a template
      * 
@@ -128,7 +130,10 @@ class Digitas_Core_Controller
     protected function render($templateName, array $parameters = array())
     {
         $template = $this->twig->loadTemplate($templateName);
-        
+
+        $parameters = array_merge(array('app' => $this->config['app']), $parameters);
+
         return $template->render($parameters);
     }
+
 }
