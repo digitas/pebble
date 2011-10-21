@@ -1,0 +1,6 @@
+ld/
+nbbuild/
+dist/
+nbdist/
+nbactions.xml
+nb-configuration.xml
