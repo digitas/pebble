@@ -94,8 +94,16 @@ class Digitas_Core_Application
             }
         }
 
-        $basedir=  preg_quote($this->config['app']['basedir']);
+        $basedir = preg_quote($this->config['app']['basedir']);
         $requestUri =  preg_replace("@^$basedir@", '', $_SERVER['REQUEST_URI']);
+
+        //redirect URL with trailing slash
+        if ($requestUri !== '/' && $requestUri[strlen($requestUri)-1] === '/') {
+            $controller = new Digitas_Core_Controller();
+            $controller->setConfig($this->config);
+            $controller->redirect(rtrim($requestUri, '/'), 301);
+            return;
+        }
 
         if (!isset($this->routes[$requestUri][strtolower($_SERVER['REQUEST_METHOD'])])){
 
@@ -112,7 +120,10 @@ class Digitas_Core_Application
         }
 
         $parameters = array();
+
+        //cookie compatibility header for ie7
         header('P3P: CP="ALL ADM DEV PSAi COM OUR OTRo STP IND ONL"');
+
         echo call_user_func_array(array($this->controller, $methodName), $parameters);
 
         ob_end_flush();
@@ -204,10 +215,6 @@ class Digitas_Core_Application
             $this->config['app']['ssl'] = false;
         } else {
             $this->config['app']['ssl'] = $this->convertToBoolean($this->config['app']['ssl']);
-        }
-
-        if (!isset($this->config['app']['basedir'])) {
-            $this->config['app']['basedir'] = '';
         }
 
         if (!isset($this->config['twig']['path'])) {
