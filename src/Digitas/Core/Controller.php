@@ -112,13 +112,26 @@ class Digitas_Core_Controller
      */
     final public function errorAction(Exception $e)
     {
-        if ($e->getCode() == 404) {
-            header('Status: 404 Not Found', false, 404);
-            return $this->render('error.html.twig', array(
-                'title'         => 'Page not found',
-                'message'       => $this->config['app']['debug'] ? $e->getMessage() : 'You may have clicked an expired link or mistyped the address. Some web addresses are case sensitive.'
-            ));
+        if ($e instanceof Digitas_Core_Exception_HttpException) {
+
+            $status = isset(Digitas_Core_Exception_HttpException::$status[$e->getCode()])?Digitas_Core_Exception_HttpException::$status[$e->getCode()]:'Unknown error';
+
+            header("Status: $status", false, $e->getCode());
+
+            if ($e->getCode() == 404) {
+                return $this->render('error.html.twig', array(
+                    'title'         => 'Page not found',
+                    'message'       => $this->config['app']['debug'] ? $e->getMessage() : 'The page you requested was not found.'
+                ));
+            } elseif ($e->getCode() == 403) {
+                return $this->render('error.html.twig', array(
+                    'title'         => 'Restricted area',
+                    'message'       => $this->config['app']['debug'] ? $e->getMessage() : 'You are not allowed to access this area.'
+                ));
+            }
         }
+
+        header("Status: Internal Server Error", false, 500);
 
         return $this->render('error.html.twig', array(
             'title'         => 'Oups, an error happened',
@@ -135,9 +148,109 @@ class Digitas_Core_Controller
     protected function render($templateName, array $parameters = array())
     {
         $template = $this->twig->loadTemplate($templateName);
-
         $parameters = array_merge(array('app' => $this->config['app']), $parameters);
 
         return $template->render($parameters);
+    }
+
+    /**
+     * Check if an user is logged
+     *
+     * @return bool
+     */
+    protected function isLogged()
+    {
+        return (isset($_SESSION['user']) && $_SESSION['user'] instanceof Digitas_Core_UserInterface);
+    }
+
+    /**
+     * Return true if an user is authorized to admin
+     *
+     * @return bool
+     */
+    protected function protect()
+    {
+        $ip = isset($_SERVER['HTTP_TRUE_CLIENT_IP'])?$_SERVER['HTTP_TRUE_CLIENT_IP']:@$_SERVER['REMOTE_ADDR'];
+        if ($this->config['app']['restriction'] !== null
+            && !in_array($ip, $this->config['app']['restriction'])) {
+
+            $found = false;
+            foreach($this->config['app']['restriction'] as $allowed) {
+                if ($this->ipInRange($ip, $allowed)) {
+                    $found = true;
+                    break;
+                }
+            }
+
+            if (!$found) {
+                throw new Digitas_Core_Exception_ForbiddenHttpException(sprintf('You are not allowed to access this area. Your IP is %s', $ip));
+            }
+        }
+    }
+
+    /**
+     * Check if the $ip is in $range.
+     *
+     * $range can be in several format
+     *      1. Wildcard format:     1.2.3.*
+     *      2. CIDR format:         1.2.3/24  OR  1.2.3.4/255.255.255.0
+     *      3. Start-End IP format: 1.2.3.0-1.2.3.255
+     *
+     * @param string $ip
+     * @param string $range
+     * @return boolean
+     */
+    protected function ipInRange($ip, $range)
+    {
+        if (strpos($range, '/') !== false) {
+
+            // $range is in IP/NETMASK format
+            list($range, $netmask) = explode('/', $range, 2);
+
+            if (strpos($netmask, '.') !== false) {
+              // $netmask is a 255.255.0.0 format
+              $netmask = str_replace('*', '0', $netmask);
+              $netmaskDec = ip2long($netmask);
+
+              return ((ip2long($ip) & $netmaskDec) == (ip2long($range) & $netmaskDec));
+            } else {
+              // $netmask is a CIDR size block
+              // fix the range argument
+              $x = explode('.', $range);
+              while(count($x)<4) $x[] = '0';
+              list($a,$b,$c,$d) = $x;
+              $range = sprintf("%u.%u.%u.%u", empty($a)?'0':$a, empty($b)?'0':$b,empty($c)?'0':$c,empty($d)?'0':$d);
+              $range_dec = ip2long($range);
+              $ipDec = ip2long($ip);
+
+              # Strategy 1 - Create the netmask with 'netmask' 1s and then fill it to 32 with 0s
+              #$netmaskDec = bindec(str_pad('', $netmask, '1') . str_pad('', 32-$netmask, '0'));
+
+              # Strategy 2 - Use math to create it
+              $wildcardDec = pow(2, (32 - $netmask)) - 1;
+              $netmaskDec = ~ $wildcardDec;
+
+              return (($ipDec & $netmaskDec) == ($range_dec & $netmaskDec));
+            }
+        } else {
+            // range might be 255.255.*.* or 1.2.3.0-1.2.3.255
+            if (strpos($range, '*') !== false) { // a.b.*.* format
+              // Just convert to A-B format by setting * to 0 for A and 255 for B
+              $lower = str_replace('*', '0', $range);
+              $upper = str_replace('*', '255', $range);
+              $range = "$lower-$upper";
+            }
+
+            if (strpos($range, '-') !== false) { // A-B format
+              list($lower, $upper) = explode('-', $range, 2);
+              $lowerDec = (float)sprintf("%u", ip2long($lower));
+              $upperDec = (float)sprintf("%u", ip2long($upper));
+              $ipDec = (float)sprintf("%u", ip2long($ip));
+
+              return (($ipDec >= $lowerDec) && ($ipDec <= $upperDec));
+            }
+
+            return false;
+        }
     }
 }

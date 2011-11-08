@@ -21,16 +21,13 @@ abstract class Digitas_Core_Repository
     }
 
     /**
-     * Store an object entity
+     * Store an entity
+     *
+     * Create if if id is null, else update it
+     *
      * @param Digitas_Core_Entity $entity
      */
     abstract public function store(Digitas_Core_Entity $entity);
-
-    /**
-     * Update an object entity
-     * @param Digitas_Core_Entity $entity
-     */
-    abstract public function update(Digitas_Core_Entity $entity);
 
     /**
      *

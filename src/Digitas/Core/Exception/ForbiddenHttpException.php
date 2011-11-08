@@ -4,9 +4,9 @@
  * @copyright Digitas France <http://digitas.fr>
  */
 
-class Digitas_Core_Exception_ForbiddenHttpException extends Exception
+class Digitas_Core_Exception_ForbiddenHttpException extends Digitas_Core_Exception_HttpException
 {
-    public function __construct ($message = 'You are not allowed to access this file.', $code = 403)
+    public function __construct ($message = 'You are not allowed to access this area.', $code = 403)
     {
         parent::__construct($message, $code);
     }

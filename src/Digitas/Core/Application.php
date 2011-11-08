@@ -190,31 +190,37 @@ class Digitas_Core_Application
         }
 
         if (!isset($this->config['app']['restriction'])) {
-            $this->config['app']['restriction'] = false;
+            $this->config['app']['restriction'] = null;
         } else {
-            $this->config['app']['restriction'] = $this->convertToBoolean($this->config['app']['restriction']);
-
-            if (!is_bool($this->config['app']['restriction'])){
+            if ($this->config['app']['restriction'] == '') {
+                $this->config['app']['restriction'] = null;
+            } else {
                 $this->config['app']['restriction'] = explode(',', $this->config['app']['restriction']);
+
+                function trimValue(&$value, $key)
+                {
+                    $value = trim($value);
+                }
+                array_walk($this->config['app']['restriction'], 'trimValue');
             }
         }
 
         if (!isset($this->config['app']['session'])) {
             $this->config['app']['session'] = false;
         } else {
-            $this->config['app']['session'] = $this->convertToBoolean($this->config['app']['session']);
+            $this->config['app']['session'] = (boolean)$this->config['app']['session'];
         }
 
         if (!isset($this->config['app']['debug'])) {
             $this->config['app']['debug'] = false;
         } else {
-            $this->config['app']['debug'] = $this->convertToBoolean($this->config['app']['debug']);
+            $this->config['app']['debug'] = (boolean)$this->config['app']['debug'];
         }
 
         if (!isset($this->config['app']['ssl'])) {
             $this->config['app']['ssl'] = false;
         } else {
-            $this->config['app']['ssl'] = $this->convertToBoolean($this->config['app']['ssl']);
+            $this->config['app']['ssl'] = (boolean)$this->config['app']['ssl'];
         }
 
         if (!isset($this->config['twig']['path'])) {
@@ -243,34 +249,5 @@ class Digitas_Core_Application
     {
         $loader = new Twig_Loader_Filesystem($this->config['twig']['path']);
         $this->twig = new Twig_Environment($loader, $this->config['twig']['options']);
-    }
-
-    /**
-     * Convert a string|integer value to boolean value if the value is 1,
-     * "true", 0 and "false".
-     *
-     * @param string $value
-     * @return bool|mixed
-     */
-    private function convertToBoolean($value)
-    {
-        switch($value) {
-            case 1:
-            case '1':
-            case 'true':
-                return true;
-                break;
-
-            case 0:
-            case '0';
-            case 'false':
-                return false;
-                break;
-
-            default:
-                break;
-        }
-
-        return $value;
     }
 }
