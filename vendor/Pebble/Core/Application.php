@@ -1,30 +1,36 @@
 <?php
 /**
+ * @copyright Digitas France
  * @author Pierre-Louis LAUNAY <pllaunay@digitas.com>
- * @copyright Digitas France <http://digitas.fr>
  */
 
-class Digitas_Core_Application
+abstract class Pebble_Core_Application
 {
     public $config;
     protected $controller;
     protected $routes;
     protected $twig;
+    protected $request;
+
+    abstract public function getControllers();
 
     /**
      * Constructor
      */
-    public function __construct()
+    public function __construct($environment = 'prod')
     {
         ob_start();
-        $this->parseConfig();
+        $this->request = new Pebble_Core_Request();
+        $this->parseConfig($environment);
         $this->setTwig();
-        $this->controller = new Digitas_Core_Controller();
+        $this->controller = new Pebble_Core_Controller();
         $this->controller->setTwig($this->twig);
         $this->controller->setConfig($this->config);
         $this->routes = array();
         set_exception_handler(array($this, 'exception'));
         set_error_handler(array($this, 'error'));
+
+        $this->registerControllerProviders();
     }
 
     /**
@@ -39,8 +45,8 @@ class Digitas_Core_Application
             throw new InvalidArgumentException('The callback must be an array with the controller and method to call', 500);
         }
 
-        if (!is_subclass_of($callback[0], 'Digitas_Core_Controller')) {
-            throw new InvalidArgumentException('The controller must be extend to Digitas\Application\BaseController', 500);
+        if (!is_subclass_of($callback[0], 'Pebble_Core_Controller')) {
+            throw new InvalidArgumentException('The controller must be extend to Pebble_Core_Controller', 500);
         }
 
         $this->routes[$route]['get']['controller'] = $callback[0];
@@ -80,12 +86,12 @@ class Digitas_Core_Application
     }
 
     /**
-     *
+     * Execute the action corresponding the path info of current request
      */
     public function run()
     {
-        if (!isset($_SERVER['HTTPS']) && $this->config['app']['ssl']) {
-            return $this->controller->redirect('https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
+        if (!$this->request->isSecure() && $this->config['app']['ssl']) {
+            return $this->controller->redirect('https://' . $this->request->getHost() . $this->request->getRequestUri());
         }
 
         if ($this->config['app']['session']) {
@@ -95,23 +101,26 @@ class Digitas_Core_Application
         }
 
         $basedir = preg_quote($this->config['app']['basedir']);
-        $requestUri =  preg_replace("@^$basedir@", '', $_SERVER['REQUEST_URI']);
+        $requestUri =  preg_replace("@^$basedir@", '', $this->request->getRequestUri());
 
         //redirect URL with trailing slash
         if ($requestUri !== '/' && $requestUri[strlen($requestUri)-1] === '/') {
-            $controller = new Digitas_Core_Controller();
+            $controller = new Pebble_Core_Controller();
             $controller->setConfig($this->config);
             $controller->redirect(rtrim($requestUri, '/'), 301);
             return;
         }
 
-        if (!isset($this->routes[$requestUri][strtolower($_SERVER['REQUEST_METHOD'])])){
+        $pathInfo = $this->request->getPathInfo();
+        $method = strtolower($this->request->getMethod());
+        if (!isset($this->routes[$pathInfo][$method])){
 
-            throw new Digitas_Core_Exception_NotFoundHttpException();
+            throw new Pebble_Core_Exception_NotFoundHttpException();
         }
 
-        $this->controller = $this->routes[$requestUri][strtolower($_SERVER['REQUEST_METHOD'])]['controller'];
-        $methodName = $this->routes[$requestUri][strtolower($_SERVER['REQUEST_METHOD'])]['method'] . 'Action';
+        $route = $this->routes[$pathInfo][$method];
+        $this->controller = $route['controller'];
+        $methodName = $route['method'] . 'Action';
         $this->controller->setTwig($this->twig);
         $this->controller->setConfig($this->config);
 
@@ -130,14 +139,13 @@ class Digitas_Core_Application
     }
 
     /**
-     *
-     * @return type
+     * Display the error page
      */
     public function exception(Exception $e)
     {
         ob_end_clean();
 
-        if ($e instanceof Digitas_Core_Exception_HttpException) {
+        if ($e instanceof Pebble_Core_Exception_HttpException) {
             $statusCode = $e->getCode();
 
             switch($statusCode) {
@@ -157,8 +165,9 @@ class Digitas_Core_Application
     }
 
     /**
+     * Throw an exception
      *
-     * @return type
+     * @return ErrorException
      */
     public function error($errno, $errstr, $errfile, $errline, $errcontext)
     {
@@ -166,22 +175,52 @@ class Digitas_Core_Application
     }
 
     /**
+     * Registers controller
+     */
+    protected function registerControllerProviders()
+    {
+        foreach($this->getControllers() as $prefix => $controller) {
+            $this->mount($prefix, $controller);
+        }
+    }
+
+    /**
+     * Built a collection of routes
+     *
+     * @param string $prefix
+     * @param Pebble_Core_Controller $controller
+     */
+    protected function mount($prefix, Pebble_Core_Controller $controller)
+    {
+        //get every actions
+        $controllerCollection = $controller->connect($this);
+
+        foreach ($controllerCollection->getRoutes() as $route => $callback) {
+
+            call_user_func_array(
+                    array($this, $callback['method']),
+                    array(
+                        $route,
+                        array($controller, $callback['callback'])
+                        )
+                    );
+        }
+    }
+
+    /**
      * Parse the config
      */
-    protected function parseConfig()
+    protected function parseConfig($environment)
     {
         $this->config = parse_ini_file(dirname(__FILE__) . '/../../../app/config/config.ini', true);
+        $this->config['app']['env'] = $environment;
 
         /**
          * Override configuration on a specific environment.
          *
-         * Declare the apache constant ENV in VHOST configuration file to declare the
-         * current environment.
-         *
          * Example : SetEnv ENV dev to use config.dev.ini
          */
-        $env = getenv('ENV');
-        $envConfig = @parse_ini_file(dirname(__FILE__) . '/../../../app/config/config_' . $env . '.ini', true);
+        $envConfig = @parse_ini_file(dirname(__FILE__) . '/../../../app/config/config_' . $this->config['app']['env'] . '.ini', true);
 
         if ($envConfig) {
             foreach ($envConfig as $key => $parameters) {

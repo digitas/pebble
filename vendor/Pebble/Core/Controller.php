@@ -1,11 +1,11 @@
 <?php
 /**
- * Base controller
+ * Base Controller
  *
+ * @copyright Digitas France
  * @author Pierre-Louis LAUNAY <pllaunay@digitas.com>
- * @copyright Digitas France <http://digitas.fr>
  */
-class Digitas_Core_Controller
+class Pebble_Core_Controller
 {
     protected $twig;
     protected $config;
@@ -69,6 +69,14 @@ class Digitas_Core_Controller
         die;
     }
 
+    /**
+     * Set the specific headers for download
+     *
+     * @param string $contentType
+     * @param string $filename
+     * @param string $content
+     * @return string
+     */
     public function download($contentType, $filename, $content)
     {
         header('Content-type: ' . $contentType);
@@ -112,9 +120,9 @@ class Digitas_Core_Controller
      */
     final public function errorAction(Exception $e)
     {
-        if ($e instanceof Digitas_Core_Exception_HttpException) {
+        if ($e instanceof Pebble_Core_Exception_HttpException) {
 
-            $status = isset(Digitas_Core_Exception_HttpException::$status[$e->getCode()])?Digitas_Core_Exception_HttpException::$status[$e->getCode()]:'Unknown error';
+            $status = isset(Pebble_Core_Exception_HttpException::$status[$e->getCode()])?Pebble_Core_Exception_HttpException::$status[$e->getCode()]:'Unknown error';
 
             header("Status: $status", false, $e->getCode());
 
@@ -160,7 +168,7 @@ class Digitas_Core_Controller
      */
     protected function isLogged()
     {
-        return (isset($_SESSION['user']) && $_SESSION['user'] instanceof Digitas_Core_UserInterface);
+        return (isset($_SESSION['user']) && $_SESSION['user'] instanceof Pebble_Core_UserInterface);
     }
 
     /**
@@ -183,7 +191,7 @@ class Digitas_Core_Controller
             }
 
             if (!$found) {
-                throw new Digitas_Core_Exception_ForbiddenHttpException(sprintf('You are not allowed to access this area. Your IP is %s', $ip));
+                throw new Pebble_Core_Exception_ForbiddenHttpException(sprintf('You are not allowed to access this area. Your IP is %s', $ip));
             }
         }
     }

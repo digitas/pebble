@@ -1,6 +1,12 @@
 #!/usr/bin/env php
 <?php
 
+/**
+ * @copyright Digitas France
+ * @author Pierre-Louis LAUNAY <pllaunay@digitas.com>
+ **/
+
+
 $rootDir = dirname(dirname(__FILE__));
 $vendorDir = $rootDir.'/vendor';
 
@@ -67,11 +73,11 @@ foreach ($deps as $name => $dep) {
     }
     $url = $dep['git'];
     var_dump($url);
-    
+
     if (!is_dir($installDir)) {
         system(sprintf('git clone %s %s', escapeshellarg($url), escapeshellarg($installDir)));
     }
-    
+
     system(sprintf('cd %s && git fetch origin && git reset --hard %s', escapeshellarg($installDir), escapeshellarg($rev)));
 
     if ('update' === $command) {

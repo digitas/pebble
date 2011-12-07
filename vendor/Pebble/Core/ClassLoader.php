@@ -1,13 +1,13 @@
 <?php
 /**
+ * @copyright Digitas France
  * @author Pierre-Louis LAUNAY <pllaunay@digitas.com>
- * @copyright Digitas France <http://digitas.fr>
  */
 
-class Digitas_Core_ClassLoader
+class Pebble_Core_ClassLoader
 {
     /**
-     * Registers Twig_Autoloader as an SPL autoloader.
+     * Registers Pebble_Core_ClassLoader as an SPL autoloader.
      */
     static public function register()
     {
@@ -24,10 +24,10 @@ class Digitas_Core_ClassLoader
      */
     static public function autoload($class)
     {
-        if (0 !== strpos($class, 'Digitas')) {
+        if (0 !== strpos($class, 'Pebble')) {
             return;
         }
-        
+
         if (is_file($file = dirname(__FILE__).'/../../'.str_replace(array('_', "\0"), array('/', ''), $class).'.php')) {
             require $file;
         }
