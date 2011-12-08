@@ -7,3 +7,5 @@ nbactions.xml
 nb-configuration.xml
 app/cache/
 vendor/
+!vendor/Pebble
+!vendor/Pebble/*
