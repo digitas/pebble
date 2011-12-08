@@ -2,11 +2,11 @@
 /**
  * Repository
  *
+ * @copyright Digitas France
  * @author Pierre-Louis LAUNAY <pllaunay@digitas.com>
- * @copyright Digitas France <http://digitas.fr>
  */
 
-abstract class Digitas_Core_Repository
+abstract class Pebble_Core_Repository
 {
     protected $link;
     protected $result;
@@ -27,14 +27,14 @@ abstract class Digitas_Core_Repository
      *
      * @param Digitas_Core_Entity $entity
      */
-    abstract public function store(Digitas_Core_Entity $entity);
+    abstract public function store(Pebble_Core_Entity $entity);
 
     /**
      *
      * @param Digitas_Core_Entity $entity
      * @return array where keys are field names and value error messages
      */
-    public function validate(Digitas_Core_Entity $entity)
+    public function validate(Pebble_Core_Entity $entity)
     {
         return array();
     }

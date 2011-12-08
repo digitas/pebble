@@ -12,5 +12,5 @@ umask(0000);
 require_once dirname(__FILE__) . '/../app/autoload.php';
 require_once dirname(__FILE__) . '/../app/Application.php';
 
-$app = new Application();
+$app = new Application('dev');
 $app->run();
