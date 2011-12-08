@@ -11,14 +11,6 @@ class Pebble_Core_Controller
     protected $config;
 
     /**
-     * Constructor
-     *
-     * @param Twig_Environment $twig
-     */
-    public function __construct()
-    {}
-
-    /**
      * Set the Twig_Environment object
      *
      * @param Twig_Environment $twig
@@ -36,6 +28,20 @@ class Pebble_Core_Controller
     public function setConfig(array $config)
     {
         $this->config = $config;
+    }
+
+    /**
+     * Declare all routes
+     *
+     * @param Pebble_Core_Application $app
+     *
+     * @return Pebble_Core_ControllerCollection
+     */
+    public function connect(Pebble_Core_Application $app)
+    {
+        $controllerCollection = new Pebble_Core_ControllerCollection();
+
+        return $controllerCollection;
     }
 
     /**

@@ -11,6 +11,7 @@ class Pebble_Core_Request
     protected $baseUrl;
     protected $requestUri;
     protected $method;
+    protected $basePath;
 
     /**
      * Returns the path being requested relative to the executed script.
@@ -119,6 +120,89 @@ class Pebble_Core_Request
         }
 
         return $this->method;
+    }
+
+    /**
+     * Gets the request's scheme.
+     *
+     * @return string
+     *
+     * The following methods are derived from code of the Symfony framework
+     *
+     * Code subject to the MIT license (http://symfony.com/doc/current/contributing/code/license.html).
+     *
+     * (c) Fabien Potencier <fabien@symfony.com>
+     */
+    public function getScheme()
+    {
+        return $this->isSecure() ? 'https' : 'http';
+    }
+
+    /**
+     * Returns the port on which the request is made.
+     *
+     * @return string
+     *
+     * The following methods are derived from code of the Symfony framework
+     *
+     * Code subject to the MIT license (http://symfony.com/doc/current/contributing/code/license.html).
+     *
+     * (c) Fabien Potencier <fabien@symfony.com>
+     */
+    public function getPort()
+    {
+        return $_SERVER['SERVER_PORT'];
+    }
+
+    /**
+     * Returns the HTTP host being requested.
+     *
+     * The port name will be appended to the host if it's non-standard.
+     *
+     * @return string
+     *
+     * The following methods are derived from code of the Symfony framework
+     *
+     * Code subject to the MIT license (http://symfony.com/doc/current/contributing/code/license.html).
+     *
+     * (c) Fabien Potencier <fabien@symfony.com>
+     */
+    public function getHttpHost()
+    {
+        $scheme = $this->getScheme();
+        $port   = $this->getPort();
+
+        if (('http' == $scheme && $port == 80) || ('https' == $scheme && $port == 443)) {
+            return $this->getHost();
+        }
+
+        return $this->getHost().':'.$port;
+    }
+
+    /**
+     * Returns the root path from which this request is executed.
+     *
+     * Suppose that an index.php file instantiates this request object:
+     *
+     *  * http://localhost/index.php        returns an empty string
+     *  * http://localhost/index.php/page   returns an empty string
+     *  * http://localhost/web/index.php    return '/web'
+     *
+     * @return string
+     *
+     * The following methods are derived from code of the Zend Framework (1.10dev - 2010-01-24)
+     *
+     * Code subject to the new BSD license (http://framework.zend.com/license/new-bsd).
+     *
+     * Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
+     */
+    public function getBasePath()
+    {
+        if (null === $this->basePath) {
+            $this->basePath = $this->prepareBasePath();
+        }
+
+        return $this->basePath;
     }
 
     /**
@@ -240,27 +324,59 @@ class Pebble_Core_Request
     {
         $requestUri = '';
 
-        if ($this->headers->has('X_REWRITE_URL') && false !== stripos(PHP_OS, 'WIN')) {
+        if (isset($_SERVER['HTTP_X_REWRITE_URL']) && false !== stripos(PHP_OS, 'WIN')) {
             // check this first so IIS will catch
-            $requestUri = $this->headers->get('X_REWRITE_URL');
-        } elseif ($this->server->get('IIS_WasUrlRewritten') == '1' && $this->server->get('UNENCODED_URL') != '') {
+            $requestUri = $_SERVER['HTTP_X_REWRITE_URL'];
+        } elseif (isset($_SERVER['IIS_WasUrlRewritten']) && $_SERVER['IIS_WasUrlRewritten'] == '1' && isset($_SERVER['UNENCODED_URL']) && $_SERVER['UNENCODED_URL'] != '') {
             // IIS7 with URL Rewrite: make sure we get the unencoded url (double slash problem)
-            $requestUri = $this->server->get('UNENCODED_URL');
-        } elseif ($this->server->has('REQUEST_URI')) {
-            $requestUri = $this->server->get('REQUEST_URI');
+            $requestUri = $_SERVER['UNENCODED_URL'];
+        } elseif (isset($_SERVER['REQUEST_URI'])) {
+            $requestUri = $_SERVER['REQUEST_URI'];
             // HTTP proxy reqs setup request uri with scheme and host [and port] + the url path, only use url path
-            $schemeAndHttpHost = $this->getScheme().'://'.$this->getHttpHost();
+            $schemeAndHttpHost = $this->getScheme() . '://' . $this->getHttpHost();
             if (strpos($requestUri, $schemeAndHttpHost) === 0) {
                 $requestUri = substr($requestUri, strlen($schemeAndHttpHost));
             }
-        } elseif ($this->server->has('ORIG_PATH_INFO')) {
+        } elseif (isset($_SERVER['ORIG_PATH_INFO'])) {
             // IIS 5.0, PHP as CGI
-            $requestUri = $this->server->get('ORIG_PATH_INFO');
-            if ($this->server->get('QUERY_STRING')) {
-                $requestUri .= '?'.$this->server->get('QUERY_STRING');
+            $requestUri = $_SERVER['ORIG_PATH_INFO'];
+            if (isset($_SERVER['QUERY_STRING']) && $_SERVER['QUERY_STRING']) {
+                $requestUri .= '?'.$_SERVER['QUERY_STRING'];
             }
         }
 
         return $requestUri;
+    }
+
+    /**
+     * Prepares the base path.
+     *
+     * @return string base path
+     *
+     * The following methods are derived from code of the Zend Framework (1.10dev - 2010-01-24)
+     *
+     * Code subject to the new BSD license (http://framework.zend.com/license/new-bsd).
+     *
+     * Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
+     */
+    protected function prepareBasePath()
+    {
+        $filename = basename($_SERVER['SCRIPT_FILENAME']);
+        $baseUrl = $this->getBaseUrl();
+        if (empty($baseUrl)) {
+            return '';
+        }
+
+        if (basename($baseUrl) === $filename) {
+            $basePath = dirname($baseUrl);
+        } else {
+            $basePath = $baseUrl;
+        }
+
+        if ('\\' === DIRECTORY_SEPARATOR) {
+            $basePath = str_replace('\\', '/', $basePath);
+        }
+
+        return rtrim($basePath, '/');
     }
 }

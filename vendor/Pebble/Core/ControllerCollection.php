@@ -24,7 +24,7 @@ class Pebble_Core_ControllerCollection
      */
     public function get($route, $callbackFunction)
     {
-        $this->routes[$route] = array('method' => 'get', 'callback' => $callbackFunction);
+        $this->routes[$route]['get'] = $callbackFunction;
     }
 
     /**
@@ -35,7 +35,7 @@ class Pebble_Core_ControllerCollection
      */
     public function post($route, $callbackFunction)
     {
-        $this->routes[$route] = array('method' => 'post', 'callback' => $callbackFunction);
+        $this->routes[$route]['post'] = $callbackFunction;
     }
 
     /**

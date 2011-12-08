@@ -100,8 +100,7 @@ abstract class Pebble_Core_Application
             }
         }
 
-        $basedir = preg_quote($this->config['app']['basedir']);
-        $requestUri =  preg_replace("@^$basedir@", '', $this->request->getRequestUri());
+        $requestUri =  $this->request->getRequestUri();
 
         //redirect URL with trailing slash
         if ($requestUri !== '/' && $requestUri[strlen($requestUri)-1] === '/') {
@@ -131,7 +130,7 @@ abstract class Pebble_Core_Application
         $parameters = array();
 
         //cookie compatibility header for ie7
-        header('P3P: CP="ALL ADM DEV PSAi COM OUR OTRo STP IND ONL"');
+//        header('P3P: CP="ALL ADM DEV PSAi COM OUR OTRo STP IND ONL"');
 
         echo call_user_func_array(array($this->controller, $methodName), $parameters);
 
@@ -195,15 +194,17 @@ abstract class Pebble_Core_Application
         //get every actions
         $controllerCollection = $controller->connect($this);
 
-        foreach ($controllerCollection->getRoutes() as $route => $callback) {
+        foreach ($controllerCollection->getRoutes() as $route => $callbacks) {
 
-            call_user_func_array(
-                    array($this, $callback['method']),
-                    array(
-                        $route,
-                        array($controller, $callback['callback'])
-                        )
-                    );
+            foreach ($callbacks as $method => $callback) {
+                call_user_func_array(
+                        array($this, $method),
+                        array(
+                            $route,
+                            array($controller, $callback)
+                            )
+                        );
+            }
         }
     }
 
@@ -213,7 +214,7 @@ abstract class Pebble_Core_Application
     protected function parseConfig($environment)
     {
         $this->config = parse_ini_file(dirname(__FILE__) . '/../../../app/config/config.ini', true);
-        $this->config['app']['env'] = $environment;
+        $this->config['app']['env'] = strtolower($environment);
 
         /**
          * Override configuration on a specific environment.

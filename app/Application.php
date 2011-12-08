@@ -8,8 +8,14 @@ class Application extends Pebble_Core_Application
 {
     public function getControllers()
     {
-        return array(
-            '/' => new Digitas_Demo_Controller_Default(),
+        $controllers = array(
+            // Add another routes here
         );
+
+        if ($this->config['app']['env'] == 'dev') {
+            $controllers['/demo'] = new Digitas_Demo_Controller_Default();
+        }
+
+        return $controllers;
     }
 }

@@ -5,7 +5,7 @@ dist/
 nbdist/
 nbactions.xml
 nb-configuration.xml
-app/cache/
-vendor/
+app/cache/*
+vendor/*
 !vendor/Pebble
 !vendor/Pebble/*

@@ -72,7 +72,6 @@ foreach ($deps as $name => $dep) {
         exit(sprintf('The "git" value for the "%s" dependency must be set.', $name));
     }
     $url = $dep['git'];
-    var_dump($url);
 
     if (!is_dir($installDir)) {
         system(sprintf('git clone %s %s', escapeshellarg($url), escapeshellarg($installDir)));
