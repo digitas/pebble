@@ -27,6 +27,11 @@ abstract class Pebble_Core_Application
         $this->controller->setTwig($this->twig);
         $this->controller->setConfig($this->config);
         $this->routes = array();
+
+        if (isset($this->config['db'])) {
+            Pebble_Core_Database::getInstance($this->config['db']);
+        }
+
         set_exception_handler(array($this, 'exception'));
         set_error_handler(array($this, 'error'));
 

@@ -1,5 +1,7 @@
 # Pebble
 
+[![Build Status](https://secure.travis-ci.org/digitas/pebble.png)](http://travis-ci.org/digitas/pebble)
+
 A Silex-like micro-framework built for PHP 5.2 by Digitas France.
 
 For further information, [read the wiki](https://github.com/digitas/pebble/wiki).

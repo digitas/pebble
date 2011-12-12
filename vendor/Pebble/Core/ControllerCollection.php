@@ -50,6 +50,11 @@ class Pebble_Core_ControllerCollection
         $this->post($route, $callbackFunction);
     }
 
+    /**
+     * Get all routes
+     *
+     * @return array
+     */
     public function getRoutes()
     {
         return $this->routes;
