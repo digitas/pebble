@@ -1,0 +1,13 @@
+language: php
+
+php:
+  - 5.2
+
+branches:
+  only:
+    - master
+    - stable
+
+before_script: php bin/vendors.php install
+
+script: phpunit -c vendor/Pebble/phpunit_pebble.xml
