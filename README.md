@@ -8,7 +8,7 @@ If you have identified a bug in Pebble, please use the [bug tracker](https://git
 
 # Get the sources
 
-* [Download Pebble package](https://github.com/digitas/pebble/tags)
+* [Download the latest Pebble package](https://github.com/digitas/pebble/tags)
 
 Authors
 -------
