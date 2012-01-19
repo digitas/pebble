@@ -46,7 +46,7 @@ abstract class Pebble_Core_Application
         }
 
         if (!is_subclass_of($callback[0], 'Pebble_Core_Controller')) {
-            throw new InvalidArgumentException('The controller must be extend to Pebble_Core_Controller', 500);
+            throw new InvalidArgumentException('The controller must extend Pebble_Core_Controller', 500);
         }
 
         $this->routes[$route]['get']['controller'] = $callback[0];
@@ -65,8 +65,8 @@ abstract class Pebble_Core_Application
             throw new InvalidArgumentException('The callback must be an array with the controller and method to call', 500);
         }
 
-        if (!is_subclass_of($callback[0], 'Digitas_Core_Controller')) {
-            throw new InvalidArgumentException('The controller must be extend to Digitas\Application\BaseController', 500);
+        if (!is_subclass_of($callback[0], 'Pebble_Core_Controller')) {
+            throw new InvalidArgumentException('The controller must extend Pebble_Core_Controller', 500);
         }
 
         $this->routes[$route]['post']['controller'] = $callback[0];
