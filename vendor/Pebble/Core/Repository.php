@@ -10,6 +10,7 @@ abstract class Pebble_Core_Repository
 {
     protected $link;
     protected $result;
+    protected $config;
 
     /**
      * Constructor
@@ -17,17 +18,30 @@ abstract class Pebble_Core_Repository
      */
     public function __construct(array $config)
     {
+        $this->config = $config;
         $this->connect($config);
     }
 
     /**
-     * Store an entity
-     *
-     * Create if if id is null, else update it
+     * Create an entity in database
      *
      * @param Digitas_Core_Entity $entity
      */
-    abstract public function store(Pebble_Core_Entity $entity);
+    abstract protected function create(Pebble_Core_Entity $entity);
+
+    /**
+     * Update an entity
+     *
+     * @param Digitas_Core_Entity $entity
+     */
+    abstract protected function update(Pebble_Core_Entity $entity);
+
+    /**
+     * Populate an entity with values passed in param
+     *
+     * @param array where keys are field names and value are values
+     */
+    abstract public function populate($values);
 
     /**
      *
@@ -82,5 +96,81 @@ abstract class Pebble_Core_Repository
         }
 
         return $rows;
+    }
+
+    /**
+     * Store an entity
+     *
+     * Create if if id is null, else update it
+     *
+     * @param Digitas_Core_Entity $entity
+     */
+    public function store(Pebble_Core_Entity $entity)
+    {
+        if ($entity->getId()) {
+            $this->update($entity);
+        } else {
+            $this->create($entity);
+            $result = $this->execute('SELECT LAST_INSERT_ID() as id');
+            $result = $result[0];
+
+            if (!$result) {
+                throw new Exception('Unable to get last insert id');
+            }
+
+            $entity->setId($result['id']);
+        }
+    }
+
+
+    /**
+     * Search for an entity matching the conditions in $fieldValueTab
+     *
+     * @param array $fieldValueTab array($fieldName => $value)
+     * @return type
+     */
+    public function findOneBy($fieldValueTab)
+    {
+        $table = $this->getTableName();
+        $query = "SELECT * FROM $table WHERE 1 ";
+
+        foreach ($fieldValueTab as $field => $value) {
+            $query .= " AND $field = '$value'";
+        }
+
+        $result = $this->execute($query);
+
+        if (!$result) {
+            return null;
+        }
+
+        return $this->populate($result[0]);
+    }
+
+
+    /**
+     * Search for all entities matching the conditions in $fieldValueTab
+     *
+     * @param array $fieldValueTab array($fieldName => $value)
+     * @return type
+     */
+    public function findAllBy(array $fieldValueTab)
+    {
+        $table = $this->getTableName();
+        $query = "SELECT * FROM $table WHERE 1 ";
+        $cond = 0;
+
+        foreach ($fieldValueTab as $field => $value) {
+            $query .= " AND $field = '$value'";
+        }
+
+        $results = $this->execute($query);
+        $collection = array();
+
+        foreach ($results as $result) {
+            $collection[] = $this->populate($result);
+        }
+
+        return $collection;
     }
 }

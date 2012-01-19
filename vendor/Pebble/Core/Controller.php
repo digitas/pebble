@@ -52,6 +52,16 @@ class Pebble_Core_Controller
      */
     public function redirect($route, $status = 302)
     {
+        if (!isset($this->config['app']['basedir'])) {
+            $basedir = '/';
+        } else {
+            $basedir = $this->config['app']['basedir'];
+
+            if (!$basedir[0] === '/') {
+                $basedir = '/' . $basedir;
+            }
+        }
+
         switch($status) {
             case 301:
                 header('Status: 301 Moved Permanently', false, 301);
@@ -65,12 +75,17 @@ class Pebble_Core_Controller
                 header('Status: ' . $status, false, $status);
         }
 
-
         if (preg_match('/^https?:\/\//', $route)) {//absolute
             header('Location: ' . $route);
-        } else { //relative
-            header('Location: ' . $this->config['app']['basedir'] . $route);
+        } else {
+
+            if (!$route[0] === '/') {
+                $route = '/' . $route;
+            }
+
+            header('Location: ' . $basedir . $route);
         }
+
         ob_end_clean();
         die;
     }
