@@ -56,11 +56,13 @@ class Pebble_Core_Controller
             $basedir = '/';
         } else {
             $basedir = $this->config['app']['basedir'];
-
             if (!$basedir[0] === '/') {
                 $basedir = '/' . $basedir;
             }
         }
+
+        //flush output buffer before sending http header
+        ob_end_clean();
 
         switch($status) {
             case 301:
@@ -78,15 +80,16 @@ class Pebble_Core_Controller
         if (preg_match('/^https?:\/\//', $route)) {//absolute
             header('Location: ' . $route);
         } else {
-
-            if (!$route[0] === '/') {
+            if ($route[0] !== '/') {
                 $route = '/' . $route;
             }
 
-            header('Location: ' . $basedir . $route);
-        }
+            if ($basedir !== '/') {
+                $route = $basedir . $route;
+            }
 
-        ob_end_clean();
+           header('Location: ' . $route);
+        }
         die;
     }
 
