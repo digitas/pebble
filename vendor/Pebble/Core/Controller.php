@@ -9,6 +9,22 @@ class Pebble_Core_Controller
 {
     protected $twig;
     protected $config;
+    protected $request;
+
+    /**
+     * Set the Twig_Environment object
+     *
+     * @param Twig_Environment $twig
+     */
+    public function setRequest(Pebble_Core_Request $request)
+    {
+        $this->request = $request;
+    }
+
+    public function getRequest()
+    {
+        return $this->request;
+    }
 
     /**
      * Set the Twig_Environment object
